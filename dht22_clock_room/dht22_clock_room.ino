@@ -1,9 +1,6 @@
 #include "ESP8266WiFi.h"
 #include "DHT.h"
 #include "settings.h"
-#include "Adafruit_MQTT.h"
-#include "Adafruit_MQTT_Client.h"
-#include <ArduinoJson.h>
 #define DHTPIN 2     // what digital pin we're connected to
 
 // Uncomment whatever type you're using!
@@ -36,9 +33,6 @@ void setup() {
 }
 
 void takeReadings() {
-  // Wait a few seconds between measurements.
-  //delay(5000);
-  //WiFiClient client;
   client.stop();
   if (client.connect(host, port)) {
     digitalWrite(ledGreenPin, HIGH); //turn on green to signal we are taking a reading
@@ -58,16 +52,14 @@ void takeReadings() {
 
     // Compute heat index in Fahrenheit (the default)
     int hif = dht.computeHeatIndex(f, h);
-
-    String data2 = "{\"device_name\":\"esp8266_basement\",\"temperature\":";
+    //build url, could not get data to POST as body, the web server was not detecting the stream for some reason so moved to url params
+    String data2 = "{\"device_name\":\"esp8266_001\",\"temperature\":";
     data2 += f;
     data2 += ",\"humidity\":";
     data2 += h;
     data2 += ",\"heat_index\":";
     data2 += hif;
     data2 += "} ";
-    String data3 = "{\"device_name\":\"esp8266_basement\",\"temperature\":\"66\"}\r\n\r\n";
-    String data4 = "{\"device_name\":\"esp8266_basement\",\"temperature\":\"66\"} ";
     String hostS = host;
     String auth = "Authorization: Token ";
     auth += API_TOKEN;
@@ -79,16 +71,7 @@ void takeReadings() {
     url += "\r\n";
     url += auth;
     url += "\r\n";
-    //url += "User-Agent: Arduino/1.0\r\n";
-    //url += "Accept: */*\r\n";
-    //url += "Accept-Encoding: gzip, deflate\r\n";
-    //url += "Accept-Language: en-US,en;q=0.8\r\n";
     url += "Content-Type: application/json\r\n";
-    //url += "Connection: close\r\n";
-    //url += "Content-Length:";
-    //url += data3.length();
-    //url += "\r\n";
-    //url += data3;
     Serial.println(url);
     client.println(url);
     //client.println();
@@ -108,13 +91,14 @@ void takeReadings() {
     Serial.println(host);
     Serial.println(port);
     digitalWrite(BUILTIN_LED, LOW);
-    delay(20000);
   }
   client.stop();
 }
 
 void loop() {
   takeReadings();
+  //every minute
+  delay(60000);
 }
 
 
