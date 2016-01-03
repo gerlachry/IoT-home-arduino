@@ -1,55 +1,52 @@
-#include "ESP8266WiFi.h"
+//#include "ESP8266WiFi.h"
 #include "DHT.h"
 #include "settings.h"
-#define DHTPIN 2     // what digital pin we're connected to
+#define DHTPIN 8     // what digital pin we're connected to
 
 // Uncomment whatever type you're using!
 #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
 
 // Initialize DHT sensor.
 DHT dht(DHTPIN, DHTTYPE);
-//turn on when reading and transimitting data
-int ledGreenPin = 5;
-
-int value = 0;
-int value2 = 0;
 // Create an ESP8266 WiFiClient class to connect to the MQTT server.
-WiFiClient client;
-
+//WiFiClient client;
 
 void setup() {
   Serial.begin(9600);
-  pinMode(BUILTIN_LED, OUTPUT); //builtin LED, turn on if any errors
-  pinMode(ledGreenPin, OUTPUT);
 
   dht.begin();
   //wifi
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println(WiFi.localIP());
+//  WiFi.begin(ssid, password);
+//  while (WiFi.status() != WL_CONNECTED) {
+//    delay(500);
+//    Serial.print(".");
+//  }
+//  Serial.println(WiFi.localIP());
 }
 
 void takeReadings() {
   client.stop();
   if (client.connect(host, port)) {
-    digitalWrite(ledGreenPin, HIGH); //turn on green to signal we are taking a reading
-    digitalWrite(BUILTIN_LED, HIGH); //make sure red goes off
     int h = dht.readHumidity();
     // Read temperature as Fahrenheit (isFahrenheit = true)
     int f = dht.readTemperature(true);
-
+    Serial.println(f);
     // Check if any reads failed and exit early (to try again).
     if (isnan(h) || isnan(f)) {
       Serial.println("Failed to read from DHT sensor!");
-      digitalWrite(ledGreenPin, LOW);
-      digitalWrite(BUILTIN_LED, LOW);
       delay(1000);
       return;
     }
-
+    int h = dht.readHumidity();
+    // Read temperature as Fahrenheit (isFahrenheit = true)
+    int f = dht.readTemperature(true);
+    Serial.println(f);
+    // Check if any reads failed and exit early (to try again).
+    if (isnan(h) || isnan(f)) {
+      Serial.println("Failed to read from DHT sensor!");
+      delay(1000);
+      return;
+    }
     // Compute heat index in Fahrenheit (the default)
     int hif = dht.computeHeatIndex(f, h);
     //build url, could not get data to POST as body, the web server was not detecting the stream for some reason so moved to url params
@@ -74,7 +71,7 @@ void takeReadings() {
     url += "Content-Type: application/json\r\n";
     Serial.println(url);
     client.println(url);
-    //client.println();
+    client.println();
     while (!client.available()) {
       Serial.println("checking for response from server");
       delay(200);
@@ -85,12 +82,10 @@ void takeReadings() {
     }
     Serial.println();
     Serial.println("--END---");
-    digitalWrite(ledGreenPin, LOW);
   } else {
     Serial.println("host connection failed");
     Serial.println(host);
     Serial.println(port);
-    digitalWrite(BUILTIN_LED, LOW);
   }
   client.stop();
 }
@@ -98,7 +93,7 @@ void takeReadings() {
 void loop() {
   takeReadings();
   //every minute
-  delay(60000);
+  delay(1000);
 }
 
 
